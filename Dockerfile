@@ -42,6 +42,7 @@ ENV PATH=/opt/conda/envs/monica/bin:/opt/conda/envs/tools/bin:$PATH \
     BLASTDB=/db \
     XDG_DATA_HOME=/db \
     ETE_DATA_HOME=/db \
+    MONICA_TEMP=/tmp \
     MPLBACKEND=Agg
 
 COPY monica_v5.py /opt/monica/monica_v5.py

@@ -56,6 +56,26 @@ __version__ = "5.0.0"
 # and every lineage lookup would then fail silently, leaving a run that blasts
 # correctly and classifies nothing.
 
+# Paths of the original deployment. They are still the defaults on that machine,
+# but only if they exist: the same script has to run on a laptop, inside the
+# distributed image, where none of them is present. MONICA_TEMP and
+# MONICA_FAST5 override them.
+LEGACY_TEMP = "/mnt/dataZEUSPV/wooey/tmp/"
+LEGACY_SEQUENCE_DATA = "/mnt/data3ZEUSPV/SequenceData/"
+
+
+def default_temp() -> str:
+    """Directory the run's temporary folder is created in."""
+    return (os.environ.get("MONICA_TEMP")
+            or (LEGACY_TEMP if os.path.isdir(LEGACY_TEMP) else tempfile.gettempdir()))
+
+
+def default_fast5() -> str:
+    """Default fast5 directory; empty when the deployment path is absent."""
+    return (os.environ.get("MONICA_FAST5")
+            or (LEGACY_SEQUENCE_DATA if os.path.isdir(LEGACY_SEQUENCE_DATA) else ""))
+
+
 DEFAULT_BLASTDB_DIR = os.environ.get("BLASTDB") or "/mnt/dataQNAP/blastdb/"
 os.environ.setdefault("BLASTDB", DEFAULT_BLASTDB_DIR)
 if "XDG_DATA_HOME" not in os.environ and os.path.exists(
@@ -1533,7 +1553,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-r", "--retmax", nargs="?", type=int, default=100000,
                         help="number of id to retrieve per iteration")
     parser.add_argument("--barcode", help="barcode to analyse", required=True)
-    parser.add_argument("-f5", "--folder_fast5", default="/mnt/data3ZEUSPV/SequenceData/",
+    parser.add_argument("-f5", "--folder_fast5", default=default_fast5(),
                         help="folder containing fast5 files")
     parser.add_argument("-cwd", "--working_directory", default="", help="working directory")
     parser.add_argument("-t", "--threads", nargs="?", type=int, default=10,
@@ -1544,9 +1564,12 @@ def build_parser() -> argparse.ArgumentParser:
                         default="phyto", help="QOS to use in SLURM")
     parser.add_argument("-dbe", "--database_external", nargs="?", default="",
                         help="blast database prefix, .nal alias or fasta file")
-    parser.add_argument("-tmp", "--temp", nargs="?", default="/mnt/dataZEUSPV/wooey/tmp/")
+    parser.add_argument("-tmp", "--temp", nargs="?", default=default_temp(),
+                        help="directory for the intermediate files (query chunks and "
+                             "per-chunk blast tables); with --slurm it must be readable "
+                             "from the compute nodes")
     parser.add_argument("--folder_fastq", required=True,
-                        default="/mnt/data3ZEUSPV/SequenceData/",
+                        default=default_fast5(),
                         help="folder where fastq file are located")
     parser.add_argument("-e", "--email", nargs="?", default="", required=True,
                         help="email for blast search")
