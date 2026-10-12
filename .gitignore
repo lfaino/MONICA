@@ -15,3 +15,6 @@ jobs/
 *.pdf
 run_manifest.json
 slurm_logs/
+
+# packaging artefact of the repository itself
+monica-repo.tar.gz
