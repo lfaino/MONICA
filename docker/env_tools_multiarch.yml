@@ -1,0 +1,24 @@
+# Command line tools called by monica_v5.py, for the published multi-architecture
+# image. Unlike env_tools.yml (exact pins, reproducible internal build) nothing is
+# pinned here: the linux-aarch64 builds of several bioconda packages lag behind
+# the x86_64 ones, and an exact pin would make the Apple Silicon image unsolvable.
+# The versions that were actually used are recorded in every run's manifest.
+name: tools
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - minimap2
+  - samtools
+  - bcftools
+  - htslib            # bgzip, tabix
+  - bwa
+  - racon
+  - porechop
+  - kmer-jellyfish    # the `jellyfish` k-mer counter
+  - spades
+  - nanopolish
+  - blast             # blastn, blastdbcmd, makeblastdb, blastdb_aliastool
+  - krona             # ktImportTaxonomy
+# freebayes is deliberately absent: the pipeline never calls it, and on
+# linux-aarch64 it pins htslib <=1.21 while nanopolish needs 1.22.

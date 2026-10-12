@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+{% if errors %}<div class="errors">{% for error in errors %}<div>{{ error }}</div>{% endfor %}</div>{% endif %}
+
+<form method="post" action="/run">
+  <div class="card">
+    <h2>1 · Dati da analizzare</h2>
+
+    <label class="field">
+      <span>Run di sequenziamento</span>
+      <select name="folder_fastq_choice" id="runpicker" onchange="loadBarcodes()">
+        <option value="">— scegli un run —</option>
+        {% for label, path in runs %}<option value="{{ path }}">{{ label }}</option>{% endfor %}
+      </select>
+      <span class="hint">Oppure incolla un percorso completo qui sotto.</span>
+    </label>
+
+    <label class="field">
+      <span>Percorso della cartella fastq <span class="hint">(solo se il run non è in elenco)</span></span>
+      <input type="text" name="folder_fastq" id="folderfree" onchange="loadBarcodes()"
+             placeholder="/mnt/data3ZEUSPV/SequenceData/.../fastq_pass">
+    </label>
+
+    <div class="field">
+      <span style="display:block;font-weight:600;margin-bottom:5px;font-size:14px">Barcode</span>
+      <div id="barcodes"><p class="muted">Scegli prima un run.</p></div>
+      <p class="hint">Oppure scrivili a mano:
+        <input type="text" name="barcode" style="width:260px" placeholder="barcode01-12  oppure  barcode01,barcode05"></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2 · Database e identificazione</h2>
+    <label class="field">
+      <span>Database di riferimento</span>
+      <select name="database">
+        <option value="">— scegli —</option>
+        {% for label, flag, value in databases %}<option value="{{ label }}">{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>Database esterno <span class="hint">(percorso, se non è in elenco)</span></span>
+      <input type="text" name="database_external" placeholder="/mnt/dataQNAP/blastdb/mioDatabase">
+    </label>
+    <label class="field">
+      <span>Email <span class="hint">(richiesta da blast/NCBI)</span></span>
+      <input type="email" name="email" value="{{ default_email }}">
+    </label>
+    <label class="field">
+      <span>Nome dell'analisi</span>
+      <input type="text" name="name" placeholder="es. xylella_luglio">
+    </label>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Opzioni avanzate <span class="hint">— generate dalla pipeline, lasciale vuote per i valori predefiniti</span></summary>
+      <div class="grid">
+      {% for field in advanced %}
+        <label class="field">
+          <span>{{ field.dest }} <span class="hint">{{ field.flag }}</span></span>
+          {% if field.kind == "select" %}
+            <select name="{{ field.dest }}">
+              <option value="">{{ field.default }}</option>
+              {% for choice in field.choices %}<option value="{{ choice }}">{{ choice }}</option>{% endfor %}
+            </select>
+          {% elif field.kind == "checkbox" %}
+            <input type="checkbox" name="{{ field.dest }}" value="1">
+          {% else %}
+            <input type="text" name="{{ field.dest }}" placeholder="{{ field.default }}">
+          {% endif %}
+          <span class="hint">{{ field.help }}</span>
+        </label>
+      {% endfor %}
+      </div>
+    </details>
+  </div>
+
+  <button type="submit">Avvia l'analisi</button>
+</form>
+
+{% if jobs %}
+<div class="card" style="margin-top:26px">
+  <h2>Ultime analisi</h2>
+  <table>
+    <tr><th>Nome</th><th>Stato</th><th>Inviata</th><th></th></tr>
+    {% for job in jobs %}
+    <tr>
+      <td>{{ job.name }}</td>
+      <td><span class="state {{ job.status }}">{{ job.status }}</span></td>
+      <td class="muted">{{ job.submitted }}</td>
+      <td><a href="/jobs/{{ job.id }}">apri</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<script>
+function loadBarcodes() {
+  const picker = document.getElementById('runpicker');
+  const free = document.getElementById('folderfree');
+  const folder = free.value.trim() || picker.value;
+  if (!folder) return;
+  fetch('/barcodes?folder=' + encodeURIComponent(folder))
+    .then(r => r.text()).then(html => { document.getElementById('barcodes').innerHTML = html; });
+}
+function setAll(state) {
+  document.querySelectorAll('#barcodes input[type=checkbox]').forEach(box => box.checked = state);
+}
+</script>
+{% endblock %}

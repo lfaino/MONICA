@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store
+*.egg-info/
+
+# runtime data: never commit reads, databases or results
+MONICA/
+jobs/
+*.sqlite
+*.blastn
+*.fastq
+*.fastq.gz
+*.xlsx
+*.pdf
+run_manifest.json
+slurm_logs/

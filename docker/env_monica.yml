@@ -1,0 +1,20 @@
+# Python runtime of monica_v4.py.
+name: monica
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - biopython
+  - pandas<3
+  - numpy<3
+  - matplotlib-base<4
+  - seaborn
+  - requests
+  - scikit-bio
+  - tqdm
+  - openpyxl              # pandas .to_excel backend
+  - cython                # build dependency of ete4
+  - pip:
+      - ete4
+      - simple_slurm

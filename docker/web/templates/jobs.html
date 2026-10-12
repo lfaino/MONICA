@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>Analisi</h2>
+  {% if not jobs %}<p class="muted">Nessuna analisi ancora.</p>{% else %}
+  <table>
+    <tr><th>Nome</th><th>Barcode</th><th>Database</th><th>Stato</th><th>Inviata</th><th></th></tr>
+    {% for job in jobs %}
+    <tr>
+      <td>{{ job.name }}</td>
+      <td class="muted">{{ job.barcode }}</td>
+      <td class="muted">{{ job.database }}</td>
+      <td><span class="state {{ job.status }}">{{ job.status }}</span></td>
+      <td class="muted">{{ job.submitted }}</td>
+      <td><a href="/jobs/{{ job.id }}">apri</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

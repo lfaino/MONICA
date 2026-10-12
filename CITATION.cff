@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+title: MONICA
+message: If you use this software, please cite it as below.
+type: software
+authors:
+  - family-names: Faino
+    given-names: Luigi
+    affiliation: Department of Environmental Biology, Sapienza University of Rome
+repository-code: https://github.com/REPLACE-ME/monica
+abstract: >-
+  Detection and quantification of plant pathogens from Nanopore amplicon
+  sequencing: read filtering and trimming, optional correction and assembly,
+  blast against a nucleotide database and taxonomic assignment with the NCBI
+  taxonomy, with Krona, abundance and diversity reports.
+keywords:
+  - nanopore
+  - metabarcoding
+  - plant pathogens
+  - amplicon sequencing
+version: 5.0.0
+license: REPLACE-ME

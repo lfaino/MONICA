@@ -1,0 +1,72 @@
+# Builds and publishes the MONICA image for Intel/AMD and ARM (Apple Silicon).
+#
+# Each architecture is built on its own runner - emulating arm64 with QEMU takes
+# hours for a conda image of this size - and the two are then joined into one
+# multi-architecture tag, so `docker pull` picks the right one automatically.
+#
+# The arm64 runner (ubuntu-24.04-arm) is free for public repositories; on a
+# private repository either enable larger runners or drop the arm64 entry.
+name: image
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            suffix: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            suffix: arm64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push ${{ matrix.suffix }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.ref_name }}-${{ matrix.suffix }}
+          cache-from: type=gha,scope=${{ matrix.suffix }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.suffix }}
+
+  manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Join the two architectures under one tag
+        run: |
+          for tag in "${{ github.ref_name }}" latest; do
+            docker buildx imagetools create -t "${IMAGE}:${tag}" \
+              "${IMAGE}:${{ github.ref_name }}-amd64" \
+              "${IMAGE}:${{ github.ref_name }}-arm64"
+          done
+          docker buildx imagetools inspect "${IMAGE}:latest"

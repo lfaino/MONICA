@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+  <h2>{{ job.name }} <span class="state {{ job.status }}">{{ job.status }}</span></h2>
+  <table>
+    <tr><th>Reads</th><td class="muted">{{ job.folder }}</td></tr>
+    <tr><th>Barcode</th><td class="muted">{{ job.barcode }}</td></tr>
+    <tr><th>Database</th><td class="muted">{{ job.database }}</td></tr>
+    <tr><th>Inviata</th><td class="muted">{{ job.submitted }}{% if job.finished %} · conclusa {{ job.finished }}{% endif %}</td></tr>
+  </table>
+  <p style="margin-top:16px">
+    {% if job.status in ["queued", "running"] %}
+      <form method="post" action="/jobs/{{ job.id }}/cancel" style="display:inline">
+        <button class="ghost" type="submit">Interrompi</button></form>
+      <span class="hint">La pagina si aggiorna da sola ogni 10 secondi.</span>
+    {% else %}
+      <form method="post" action="/jobs/{{ job.id }}/delete" style="display:inline"
+            onsubmit="return confirm('Eliminare questa analisi e i suoi file?')">
+        <button class="ghost" type="submit">Elimina</button></form>
+    {% endif %}
+  </p>
+</div>
+
+{% if files %}
+<div class="card">
+  <h2>Risultati</h2>
+  <table>
+    {% for file in files %}
+    <tr>
+      <td><a href="/jobs/{{ job.id }}/files/{{ file.name }}">{{ file.name }}</a></td>
+      <td class="muted">{{ "%.1f"|format(file.size / 1024) }} kB</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Log <a class="hint" href="/jobs/{{ job.id }}/log">(completo)</a></h2>
+  <pre class="log">{{ log }}</pre>
+  <details><summary class="hint">Comando eseguito</summary><pre class="log">{{ command }}</pre></details>
+</div>
+{% endblock %}
