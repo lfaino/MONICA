@@ -6,7 +6,7 @@ authors:
   - family-names: Faino
     given-names: Luigi
     affiliation: Department of Environmental Biology, Sapienza University of Rome
-repository-code: https://github.com/REPLACE-ME/monica
+repository-code: https://github.com/lfaino/MONICA
 abstract: >-
   Detection and quantification of plant pathogens from Nanopore amplicon
   sequencing: read filtering and trimming, optional correction and assembly,

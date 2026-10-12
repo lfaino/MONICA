@@ -1,7 +1,7 @@
 #!/bin/bash
 # MONICA - double-click to start. macOS and Linux.
 set -u
-IMAGE="${MONICA_IMAGE:-ghcr.io/REPLACE-ME/monica:latest}"
+IMAGE="${MONICA_IMAGE:-ghcr.io/lfaino/monica:latest}"
 PORT="${MONICA_PORT:-8765}"
 HOME_DIR="${MONICA_HOME:-$HOME/MONICA}"
 

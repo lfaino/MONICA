@@ -1,7 +1,7 @@
 @echo off
 rem MONICA - double-click to start. Windows.
 setlocal
-if "%MONICA_IMAGE%"=="" set MONICA_IMAGE=ghcr.io/REPLACE-ME/monica:latest
+if "%MONICA_IMAGE%"=="" set MONICA_IMAGE=ghcr.io/lfaino/monica:latest
 if "%MONICA_PORT%"=="" set MONICA_PORT=8765
 if "%MONICA_HOME%"=="" set MONICA_HOME=%USERPROFILE%\MONICA
 
