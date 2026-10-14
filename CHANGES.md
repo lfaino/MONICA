@@ -145,3 +145,25 @@ make that guarantee hold:
 
 The per-sample report `<sample>_blastn_results.txt` is a result, not an
 intermediate, and stays in the output directory.
+
+## Read correction: `merge_corrected_reads()` removed
+
+`racon_correct()` ran two rounds of racon and the result was handed to
+`merge_corrected_reads()`, whose job was to re-add any read racon had not
+corrected so that nothing was lost before blast. That step was both redundant
+and harmful, and it is now gone; `racon_correct()` returns the query file
+directly.
+
+* racon is called with `-u` (`--include-unpolished`), so its output already
+  contains every input read — polished where possible, unchanged elsewhere.
+  Measured on a 22,215-read sample: racon returned 22,215 sequences with none
+  missing, 14,480 of them actually modified.
+* the merge compared read ids verbatim and normalised only the `<id>:0-1200`
+  form of racon suffix, while each racon round appends a bare `r` to the name.
+  After two rounds no id matched, so *every* read was re-added: 44,430
+  sequences for 22,215 reads. Blast cost doubled and each read received two
+  independent taxonomic assignments.
+
+The log line `WE CORRECTED <n> READS; <m> UNCORRECTED READS KEPT` is replaced by
+`CORRECTION RETURNED <n> READS`, counted on the fasta that goes to blast. The
+old message counted racon's output sequences, not the reads it had changed.

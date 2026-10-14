@@ -1073,40 +1073,34 @@ def racon_round(target: str, reads: str, run: Run, max_overlaps: int) -> str:
 
 
 def racon_correct(reads: str, run: Run, num_reads_cor: int) -> str:
-    """Two rounds of minimap2 + racon correction."""
+    """Two rounds of minimap2 + racon correction.
+
+    racon is called with -u, so the returned fasta holds every input read: the
+    ones it could polish in corrected form, the others unchanged. Nothing has to
+    be merged back afterwards.
+    """
     max_overlaps = num_reads_cor if num_reads_cor > 0 else 100000
     first = racon_round(reads, reads, run, max_overlaps)
-    return racon_round(first, reads, run, max_overlaps)
+    corrected = racon_round(first, reads, run, max_overlaps)
+    n_out = sum(1 for line in open(corrected) if line.startswith(">"))
+    logger.info("CORRECTION RETURNED %s READS", n_out)
+    return corrected
 
 
-def merge_corrected_reads(trimmed_fastq: str, corrected_fasta: str, run: Run) -> str:
-    """Add the reads racon could not correct to the corrected set.
-
-    Version 4 did this with a nested `any(... startswith ...)` scan, i.e. one
-    comparison per pair of reads; on 100k reads that is 10^10 string compares.
-    Here the corrected ids go into a set and the fastq is streamed once.
-    """
-    corrected_ids = set()
-    n_corrected = 0
-    for record in SeqIO.parse(corrected_fasta, "fasta"):
-        n_corrected += 1
-        corrected_ids.add(record.id)
-        # racon appends a suffix to the read name (e.g. "<id>:0-1200").
-        for separator in (":", " "):
-            if separator in record.id:
-                corrected_ids.add(record.id.split(separator)[0])
-
-    merged = temp_path(run, suffix=".fasta")
-    n_added = 0
-    with open(merged, "w") as out:
-        for record in SeqIO.parse(corrected_fasta, "fasta"):
-            SeqIO.write(record, out, "fasta")
-        for record in SeqIO.parse(trimmed_fastq, "fastq"):
-            if record.id not in corrected_ids:
-                SeqIO.write(record, out, "fasta")
-                n_added += 1
-    logger.info("WE CORRECTED %s READS; %s UNCORRECTED READS KEPT", n_corrected, n_added)
-    return merged
+# merge_corrected_reads() used to re-add the reads racon had not corrected, so
+# that no read was lost before blast. It was both redundant and harmful:
+#
+#   * racon runs with -u (--include-unpolished), so its output already contains
+#     every input read - corrected where it could be, unchanged elsewhere.
+#     Measured on a 22,215-read sample: racon returned 22,215 sequences, none
+#     missing, of which 14,480 were actually modified.
+#   * it compared read ids verbatim, normalising only the "<id>:0-1200" form of
+#     racon suffix. Each racon round appends a bare "r" to the name instead, so
+#     after the two rounds of racon_correct() no id matched and *every* read was
+#     re-added: the blast query doubled (44,430 sequences for 22,215 reads),
+#     doubling the blast cost and giving each read two independent assignments.
+#
+# The reads now reach blast exactly as racon returns them.
 
 
 def assemble(corrected_reads: str, raw_reads: str, run: Run, sample: str,
@@ -1758,8 +1752,7 @@ def process_barcode(barcode: str, args, run: Run, database: str,
     assembled: Optional[str] = None
     if args.correct or args.assemble or args.use_assembled or args.only_assemble:
         try:
-            corrected_raw = racon_correct(trimmed, run, args.num_reads_cor)
-            corrected = merge_corrected_reads(trimmed, corrected_raw, run)
+            corrected = racon_correct(trimmed, run, args.num_reads_cor)
         except CommandError as error:
             logger.error("READ CORRECTION FAILED FOR %s: %s", barcode, error)
             corrected = None
